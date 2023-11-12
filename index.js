@@ -4,7 +4,7 @@ import morgan from "morgan";
 import { Server as SocketServer } from "socket.io";
 import { resolve, dirname } from "path";
 
-import { PORT } from "./config.js";
+import { PORT } from "./server/config.js";
 import cors from "cors";
 
 // Initializations
