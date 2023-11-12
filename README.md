@@ -1,6 +1,13 @@
 # Getting Started with Create React App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This project is a chat application created with React - Vite - Socket, In this chat you can write and the other 
+persons that have the link can answer you and start an conversation, the person who uses the browser will have the
+username "me" by default thi is to differentiate from the other person.
+
+
+other notes:
+
+"This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app)."
 
 ## Available Scripts
 
