@@ -1,3 +1,5 @@
+/* App.jsx */
+
 import io from 'socket.io-client';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
