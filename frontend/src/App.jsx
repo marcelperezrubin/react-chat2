@@ -11,7 +11,18 @@ const socket = io("/");
 function App() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
+  const [room, setRoom] = useState('default');
   const [weather, setWeather] = useState(null);
+  const [users, setUsers] = useState({});
+
+  const handleRoomChange = (newRoom) => {
+    console.log(`Leaving room ${room}`);
+    socket.emit('leaveRoom', room);
+
+    console.log(`Joining room ${newRoom}`);
+    setRoom(newRoom);
+    socket.emit('joinRoom', newRoom);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -28,16 +39,15 @@ function App() {
     socket.on("message", receiveMessage);
 
     socket.on('connect', () => {
-      // Llamada a la función para obtener el pronóstico del tiempo
-      obtenerPronosticoCiudad("London");  // aqui podemos cambiar "London" por la ciudad que deseamos
+      obtenerPronosticoCiudad("Madrid");
+      socket.emit('joinRoom', room);
     });
 
     return () => {
       socket.off("message", receiveMessage);
     };
-  }, []);
+  }, [room]);
 
-  // Función para obtener el pronóstico del tiempo
   const obtenerPronosticoCiudad = async (ciudad) => {
     try {
       const apiKey = 'd853548071325aa0a422295f3d66d43e';
@@ -63,8 +73,25 @@ function App() {
     }
   };
 
-  const receiveMessage = (message) =>
+  const receiveMessage = (message) => {
     setMessages((state) => [...state, message]);
+    setUsers((state) => {
+      const updatedUsers = { ...state };
+      updatedUsers[message.from] = room; // Asigna la sala al remitente
+      return updatedUsers;
+    });
+
+    // Verifica si el mensaje indica que el usuario dejó la sala
+    if (message.body === 'leftRoom' && message.from === 'Me') {
+      setRoom('default');
+    }
+  };
+
+  const handleLeaveRoom = () => {
+    console.log(`Leaving room ${room}`);
+    socket.emit('leaveRoom', room);
+    socket.emit('message', 'leftRoom');
+  };
 
   return (
     <div className="min-h-screen bg-zinc-800 text-white flex flex-col items-center justify-center">
@@ -76,18 +103,45 @@ function App() {
           className="border-2 border-zinc-500 p-2 w-full text-black"
           onChange={(e) => setMessage(e.target.value)}
         />
+
         <button className='btn mt-2 w-full md:w-auto'>
           Send
         </button>
       </form>
 
       <ul className="mt-4 w-full md:w-1/2 lg:w-1/3">
-        {messages.map((message, i) => (
-          <li key={i} className='my-2 p-2 table text-sm rounded-md bg-sky-600'>
-            {message.from}:{message.body}
-          </li>
-        ))}
+        {messages.map((message, i) => {
+          const messageRoom = users[message.from];
+
+          if (messageRoom === room) {
+            return (
+              <li key={i} className='my-2 p-2 table text-sm rounded-md bg-sky-600'>
+                {message.from}:{message.body}
+              </li>
+            );
+          }
+          return null;
+        })}
       </ul>
+
+      <div className="mt-4">
+        <label className="text-xl font-bold">Choose Room:</label>
+        <select
+          value={room}
+          onChange={(e) => handleRoomChange(e.target.value)}
+          className="border-2 border-zinc-500 p-2 text-black"
+        >
+          <option value="main">Main Room</option>
+          <option value="room1">Room 1</option>
+          <option value="room2">Room 2</option>
+          {/* Agrega más opciones según tus necesidades */}
+        </select>
+      </div>
+
+      {/* Botón para salir de la sala */}
+      <button className="btn mt-2" onClick={handleLeaveRoom}>
+        Leave Room
+      </button>
 
       {weather && (
         <div className="mt-4">

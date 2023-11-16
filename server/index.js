@@ -20,15 +20,39 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use(express.static(resolve("frontend/dist")));
 
+// Manejo de grupos y usuarios
+const users = {};
+
 io.on("connection", (socket) => {
   console.log(socket.id);
+
+  socket.on("joinRoom", (room) => {
+    console.log(`User ${socket.id} joined room ${room}`);
+    socket.join(room);
+    users[socket.id] = room;
+  });
+
+  socket.on("leaveRoom", (room) => {
+    console.log(`User ${socket.id} left room ${room}`);
+    socket.leave(room);
+    // Puedes realizar otras acciones necesarias al salir de la sala
+  });
+
   socket.on("message", (body) => {
-    socket.broadcast.emit("message", {
+    const room = users[socket.id];
+    io.to(room).emit("message", {
       body,
       from: socket.id.slice(8),
     });
   });
+
+  socket.on("disconnect", () => {
+    const room = users[socket.id];
+    io.to(room).emit("userDisconnected", socket.id.slice(8));
+    delete users[socket.id];
+  });
 });
+
 
 server.listen(PORT);
 console.log(`server on port ${PORT}`);
