@@ -11,7 +11,7 @@ const socket = io("/");
 function App() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
-  const [room, setRoom] = useState('default');
+  const [room, setRoom] = useState('main');
   const [weather, setWeather] = useState(null);
   const [users, setUsers] = useState({});
 
@@ -79,13 +79,13 @@ function App() {
     setMessages((state) => [...state, message]);
     setUsers((state) => {
       const updatedUsers = { ...state };
-      updatedUsers[message.from] = room; // Asigna la sala al remitente
+      updatedUsers[message.from] = room; // Assign the room to the sender
       return updatedUsers;
     });
 
-    // Verifica si el mensaje indica que el usuario dejó la sala
+// Check if the message indicates that the user left the room
     if (message.body === 'leftRoom' && message.from === 'Me') {
-      setRoom('default');
+      setRoom('main');
     }
   };
 
@@ -141,7 +141,7 @@ function App() {
         </select>
       </div>
 
-      {/* Botón para salir de la sala */}
+      {/* Button to leave the room */}
       <button className="btn mt-2" onClick={handleLeaveRoom}>
         Leave Room
       </button>

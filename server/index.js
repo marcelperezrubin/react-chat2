@@ -1,11 +1,27 @@
+import mysql2 from "mysql2"
 import express from "express";
 import http from "http";
 import morgan from "morgan";
 import { Server as SocketServer } from "socket.io";
 import { resolve, dirname } from "path";
 
-import { PORT } from "./config.js";
+import { PORT, DB_CONFIG } from "./config.js";
 import cors from "cors";
+
+// Create the connection to the database
+
+const dbConnection = mysql2.createConnection(DB_CONFIG);
+
+
+
+// Connect to database
+dbConnection.connect((err) => {
+  if (err) {
+    console.error('Error connecting to MySQL:', err);
+  } else {
+    console.log('Connected to MySQL');
+  }
+});
 
 // Initializations
 const app = express();
@@ -20,7 +36,7 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use(express.static(resolve("frontend/dist")));
 
-// Manejo de grupos y usuarios
+// Management of groups and users
 const users = {};
 
 io.on("connection", (socket) => {
@@ -35,7 +51,7 @@ io.on("connection", (socket) => {
   socket.on("leaveRoom", (room) => {
     console.log(`User ${socket.id} left room ${room}`);
     socket.leave(room);
-    // Puedes realizar otras acciones necesarias al salir de la sala
+
   });
 
   socket.on("message", (body) => {
@@ -50,6 +66,68 @@ io.on("connection", (socket) => {
     const room = users[socket.id];
     io.to(room).emit("userDisconnected", socket.id.slice(8));
     delete users[socket.id];
+  });
+});
+
+
+process.on('SIGINT', () => {
+  console.log('Closing MySQL connection...');
+  dbConnection.end((err) => {
+    if (err) {
+      console.error('Error closing MySQL connection:', err);
+    } else {
+      console.log('MySQL connection closed');
+    }
+    process.exit();
+  });
+});
+
+app.get('/api/data', (req, res) => {
+  const sql = 'SELECT * FROM my_table';
+  dbConnection.query(sql, (err, result) => {
+    if (err) {
+      console.error('Error executing query:', err);
+      res.status(500).send('Internal Server Error');
+    } else {
+      res.json(result);
+    }
+  });
+});
+
+// Path to store data in the database only for the "main room"
+app.post('/api/data', (req, res) => {
+  const { room, body } = req.body;
+
+// Check if the message comes from the desired room
+  if (room === 'main room') {
+    const sql = 'INSERT INTO my_table (room, message) VALUES (?, ?)';
+    
+    dbConnection.query(sql, [room, body], (err, result) => {
+      if (err) {
+        console.error('Error executing query:', err);
+        res.status(500).send('Internal Server Error');
+      } else {
+        res.json({ success: true, message: 'Data inserted successfully' });
+      }
+    });
+  } else {
+   // If the message does not come from the desired room, you can send a response indicating that it was not stored
+    res.json({ success: false, message: 'Data not stored for this room'});
+  }
+});
+
+
+
+// Close the connection when the server shuts down
+process.on('SIGINT', () => {
+  console.log('Closing MySQL connection...');
+  dbConnection.end((err) => {
+    if (err) {
+      console.error('Error closing MySQL connection:', err);
+    } else {
+      console.log('MySQL connection closed');
+    }
+    process.exit();
   });
 });
 
