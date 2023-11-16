@@ -22,6 +22,7 @@ function App() {
     console.log(`Joining room ${newRoom}`);
     setRoom(newRoom);
     socket.emit('joinRoom', newRoom);
+    setMessages([]);
   };
 
   const handleSubmit = (e) => {
