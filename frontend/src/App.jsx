@@ -33,6 +33,7 @@ function App() {
 
     setMessages([...messages, newMessage]);
     socket.emit('message', message);
+    setMessage('');
   };
 
   useEffect(() => {
@@ -98,11 +99,12 @@ function App() {
       <form onSubmit={handleSubmit} className='bg-zinc-900 p-10 w-full md:w-1/2 lg:w-1/3'>
         <h1 className='text-2xl font-bold my-2'> Chat React App</h1>
         <input
-          type="text"
-          placeholder='Write your message...'
-          className="border-2 border-zinc-500 p-2 w-full text-black"
-          onChange={(e) => setMessage(e.target.value)}
-        />
+            type="text"
+            placeholder='Write your message...'
+            value={message}
+            className="border-2 border-zinc-500 p-2 w-full text-black"
+            onChange={(e) => setMessage(e.target.value)}
+          />
 
         <button className='btn mt-2 w-full md:w-auto'>
           Send
